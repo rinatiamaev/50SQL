@@ -39,15 +39,28 @@
 -- | 1          | 35    |
 -- | 3          | 10    |
 -- +------------+-------+
-
 SELECT 
     p.product_id,
-    COALESCE(MAX(p2.new_price), 10) AS price
+    COALESCE(latest_price.new_price, 10) AS price
 FROM 
     (SELECT DISTINCT product_id FROM Products) p
 LEFT JOIN 
-    Products p2
-    ON p.product_id = p2.product_id 
-    AND p2.change_date <= '2019-08-16'
-GROUP BY 
-    p.product_id;
+    (
+        SELECT 
+            product_id, new_price
+        FROM 
+            Products
+        WHERE 
+            (product_id, change_date) IN (
+                SELECT 
+                    product_id, MAX(change_date) AS max_date
+                FROM 
+                    Products
+                WHERE 
+                    change_date <= '2019-08-16'
+                GROUP BY 
+                    product_id
+            )
+    ) AS latest_price
+ON p.product_id = latest_price.product_id;
+
