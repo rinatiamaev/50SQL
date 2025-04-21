@@ -94,7 +94,7 @@
   ORDER BY COUNT(*) DESC, u.name
   LIMIT 1
 )
-UNION
+UNION ALL
 (
   SELECT m.title AS results
   FROM MovieRating mr
