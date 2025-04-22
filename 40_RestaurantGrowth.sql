@@ -57,18 +57,24 @@
 -- 3rd moving average from 2019-01-03 to 2019-01-09 has an average_amount of (120 + 130 + 110 + 140 + 150 + 80 + 110)/7 = 120
 -- 4th moving average from 2019-01-04 to 2019-01-10 has an average_amount of (130 + 110 + 140 + 150 + 80 + 110 + 130 + 150)/7 = 142.86
 
-SELECT
-    visited_on,
-    SUM(amount) AS amount,
-    ROUND(SUM(amount) * 1.0 / 7, 2) AS average_amount
-FROM (
-    SELECT
+WITH DailyAmount AS (
+    SELECT 
         visited_on,
         SUM(amount) AS amount
     FROM Customer
     GROUP BY visited_on
-) AS daily
+),
+Windowed AS (
+    SELECT 
+        a.visited_on,
+        SUM(b.amount) AS amount,
+        ROUND(SUM(b.amount) * 1.0 / 7, 2) AS average_amount
+    FROM DailyAmount a
+    JOIN DailyAmount b 
+        ON b.visited_on BETWEEN DATE_SUB(a.visited_on, INTERVAL 6 DAY) AND a.visited_on
+    GROUP BY a.visited_on
+)
+SELECT *
+FROM Windowed
 WHERE visited_on >= DATE_ADD((SELECT MIN(visited_on) FROM Customer), INTERVAL 6 DAY)
-GROUP BY visited_on
-HAVING COUNT(*) = 7
 ORDER BY visited_on;
